@@ -1,0 +1,29 @@
+# poke_plugin - 自动生成的配置文件
+# QQ戳一戳插件：支持主动、被动、戳回去功能
+
+# 插件基本信息配置
+[plugin]
+
+# 插件名称
+name = "poke_plugin"
+
+# 是否启用插件
+enabled = true
+
+# 插件版本
+version = "1.0.0"
+
+# 插件描述
+description = "QQ戳一戳插件"
+
+
+# 戳一戳功能配置
+[poke]
+
+# Napcat Host
+napcat_host = "127.0.0.1"
+
+# Napcat Port
+napcat_port = "4999"
+
+

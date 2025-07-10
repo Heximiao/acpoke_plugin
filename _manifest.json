@@ -1,0 +1,9 @@
+{
+  "manifest_version": 1,
+  "name": "poke_plugin",
+  "version": "0.3.3",
+  "description": "poke_plugin插件",
+  "author": {
+    "name": "何夕"
+  }
+}
