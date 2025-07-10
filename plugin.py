@@ -153,7 +153,7 @@ class PokeAction(BaseAction):
 
     def _send_request(self, url, payload):
         
-        payload["group_id"] = "961371416"    #########################群号这边改！！！！#################
+        payload["group_id"] = "这里填你要让bot戳一戳的群号"    #########################群号这边改！！！！#################
         headers = {"Content-Type": "application/json"}
 
         try:
