@@ -1,9 +1,15 @@
 {
   "manifest_version": 1,
   "name": "poke_plugin",
+  "display_name": "戳一戳插件",
   "version": "0.3.3",
-  "description": "poke_plugin插件",
+  "description": "一个自动响应或主动发起‘戳一戳’的 MaiMai 插件，支持昵称转QQ。",
   "author": {
-    "name": "何夕"
-  }
+    "name": "何夕",
+    "email": "your-email@example.com",
+    "link": "https://github.com/liuchunyu44/poke_plugin"
+  },
+  "keywords": ["poke", "maimai", "插件", "自动戳人"],
+  "entry": "plugin.py",
+  "license": "MIT"
 }
