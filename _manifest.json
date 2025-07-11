@@ -1,6 +1,6 @@
 {
   "manifest_version": 1,
-  "name": "poke_plugin",
+  "name": "acpoke_plugin",
   "display_name": "戳一戳插件",
   "version": "0.3.3",
   "description": "一个主动发起“戳一戳”的 MaiMai 插件",
