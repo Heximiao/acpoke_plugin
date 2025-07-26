@@ -1,13 +1,13 @@
 {
   "manifest_version": 1,
-  "name": "acpoke_plugin",
+  "name": "戳一戳插件",
   "display_name": "戳一戳插件",
   "version": "0.3.4",
-  "description": "一个主动发起“戳一戳”的 MaiMai 插件",
+  "description": "一个主动发起“戳一戳”的 MaiMai 插件，帮助你轻松与好友互动，自动发起戳一戳，增添群聊乐趣。",
   "author": {
     "name": "何夕",
-    "email": "lcy1416603026@gmail.com",
-    "link": "https://github.com/liuchunyu44/acpoke_plugin"
+    "url": "https://github.com/liuchunyu44/acpoke_plugin",
+    "email": "lcy1416603026@gmail.com"
   },
   "license": "MIT",
   "host_application": {
@@ -15,7 +15,7 @@
     "max_version": "0.9.1"
   },
   "entry": "plugin.py",
-  "keywords": ["poke", "maimai", "插件", "自动戳人"],
+  "keywords": ["poke", "maimai", "互动", "自动戳人", "插件"],
   "categories": ["Fun", "Interaction", "Automation"],
   "default_locale": "zh-CN",
   "locales_path": "_locales"
