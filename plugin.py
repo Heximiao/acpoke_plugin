@@ -5,13 +5,13 @@ import requests
 import logging
 from typing import List, Tuple, Type, Optional
 
-from src.plugin_system.base.base_plugin import BasePlugin, register_plugin
+from src.plugin_system import BasePlugin, register_plugin, BaseCommand
 from src.plugin_system.base.base_action import BaseAction
 from src.plugin_system.base.component_types import ComponentInfo, ActionActivationType, ChatMode
 from src.plugin_system.base.config_types import ConfigField
-from src.common.logger import get_logger
-from src.plugin_system import BaseCommand
 from src.plugin_system.apis import person_api
+from src.common.logger import get_logger
+
 
 logger = get_logger("poke_plugin")
 
@@ -78,6 +78,7 @@ class PokeAction(BaseAction):
         "别人被戳或者揉时偶尔跟着使用",
         "当你觉得对方很可爱时偶尔使用",
         "当你想和对方亲近时偶尔使用",
+        #"当别人被戳或者揉或者捏或者拍时使用"
         "当你想安慰对方时使用",
         "注意：如果你已经戳过某人了，就不要再次戳了，不然会引起别人的反感！！！不要连续使用！！"
     ]
@@ -153,7 +154,7 @@ class PokeAction(BaseAction):
 
     def _send_request(self, url, payload):
         
-        payload["group_id"] = "这里填你要让bot戳一戳的群号"    #########################群号这边改！！！！#################
+        payload["group_id"] = "这个删掉，改成你要戳别人的群号，只能填一个！！！！"    #########################群号这边改！！！！#################
         headers = {"Content-Type": "application/json"}
 
         try:
@@ -312,12 +313,14 @@ class PassivePokeCommand(BaseCommand):
 
 @register_plugin
 class PokePlugin(BasePlugin):
-    plugin_name = "poke_plugin"
+    plugin_name: str = "acpoke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.3.3"
+    plugin_version = "0.3.4"
     plugin_author = "何夕"
-    enable_plugin = True
-    config_file_name = "config.toml"
+    enable_plugin: bool = True
+    config_file_name: str = "config.toml"
+    dependencies: list[str] = []
+    python_dependencies: list[str] = []
 
     config_section_descriptions = {
         "plugin": "插件基本信息配置",
@@ -342,4 +345,5 @@ class PokePlugin(BasePlugin):
             (PokeAction.get_action_info(), PokeAction),
             #(PassivePokeCommand.get_command_info(), PassivePokeCommand),
         ]
+
     
