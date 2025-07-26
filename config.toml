@@ -5,13 +5,13 @@
 [plugin]
 
 # 插件名称
-name = "poke_plugin"
+name = "acpoke_plugin"
 
 # 是否启用插件
 enabled = true
 
 # 插件版本
-version = "1.0.0"
+version = "0.3.4"
 
 # 插件描述
 description = "QQ戳一戳插件"
