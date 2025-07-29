@@ -4,6 +4,7 @@ import random
 import requests
 import logging
 from typing import List, Tuple, Type, Optional
+import time
 
 from src.plugin_system import BasePlugin, register_plugin, BaseCommand
 from src.plugin_system.base.base_action import BaseAction
@@ -25,6 +26,7 @@ NAPCAT_BASE_URL = f"http://{NAPCAT_HOST}:{NAPCAT_PORT}"
 
 
 class PokeAction(BaseAction):
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.api = kwargs.get('api', None)
@@ -57,7 +59,7 @@ class PokeAction(BaseAction):
 5. 别人被戳或者揉时跟着使用
 
 不使用戳一戳的情况：
-1 连续戳了超过三次以上
+1 连续戳了超过三次以上,不要连续使用
 
 """
 
@@ -72,11 +74,11 @@ class PokeAction(BaseAction):
         "当你想使用QQ戳一戳功能时",
         "当别人叫你戳他时偶尔使用",
         "当你被揉或者戳之后可以使用",
-        "友好聊天的氛围时偶尔使用",
-        "提及某人时偶尔使用",
-        "别人被戳或者揉时偶尔跟着使用",
-        "当你觉得对方很可爱时偶尔使用",
-        "当你想和对方亲近时偶尔使用",
+        "友好聊天的氛围时使用",
+        "提及某人时使用",
+        "别人被戳或者揉时跟着使用",
+        "当你觉得对方很可爱时使用",
+        "当你想和对方亲近时使用",
         #"当别人被戳或者揉或者捏或者拍时使用"
         "当你想安慰对方时使用",
         "注意：如果你已经戳过某人了，就不要再次戳了，不然会引起别人的反感！！！不要连续使用！！"
@@ -149,8 +151,8 @@ class PokeAction(BaseAction):
     def _send_group_poke(self, group_id: Optional[str], reply_id: Optional[int], user_id: str):
         # 如果 group_id 无效，使用默认群号
         if not group_id or not str(group_id).isdigit():
-            logger.warning(f"[poke_plugin] 无效的 group_id={group_id}，使用默认群号 961371416")
-            group_id = "961371416"
+            logger.warning(f"[poke_plugin] 无效的 group_id={group_id}，使用默认群号")        ####这里可以添加失效以后默认发戳一戳的群
+            group_id = "删掉这几个字，填你的群"
 
         url = f"{NAPCAT_BASE_URL}/group_poke"
         payload = {
@@ -190,7 +192,7 @@ class PokeAction(BaseAction):
 class PokePlugin(BasePlugin):
     plugin_name: str = "poke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.2.0"
+    plugin_version = "0.4.0"
     plugin_author = "何夕"
     enable_plugin: bool = True
     config_file_name: str = "config.toml"
