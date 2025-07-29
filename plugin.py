@@ -44,7 +44,22 @@ class PokeAction(BaseAction):
 
     associated_types = ["text"]
 
-    llm_judge_prompt = """你是一个会戳别人的小助手...省略..."""
+    
+    llm_judge_prompt = """
+你是一个会戳别人的小助手。戳一戳是一个相对友善的动作，在聊天时会时不时的触发
+当用户表示想让bot戳人，或者有人戳或者揉了bot，或者你想要戳别人时你可以调用。
+
+使用戳一戳的情况：
+1. 用户请求“戳我”、“戳一下”
+2. bot被戳或揉，用户希望“戳回去”
+3. 用户调戏bot或提出请求需要bot回应
+4. 友好的聊天时使用
+5. 别人被戳或者揉时跟着使用
+
+不使用戳一戳的情况：
+1 连续戳了超过三次以上
+
+"""
 
     action_parameters = {
         "user_id": "要戳的用户ID，必填",
@@ -53,7 +68,19 @@ class PokeAction(BaseAction):
         "poke_mode": "主动或被动，默认为被动",
     }
 
-    action_require = ["当你想使用QQ戳一戳功能时", "当别人叫你戳他时偶尔使用"]
+    action_require = [
+        "当你想使用QQ戳一戳功能时",
+        "当别人叫你戳他时偶尔使用",
+        "当你被揉或者戳之后可以使用",
+        "友好聊天的氛围时偶尔使用",
+        "提及某人时偶尔使用",
+        "别人被戳或者揉时偶尔跟着使用",
+        "当你觉得对方很可爱时偶尔使用",
+        "当你想和对方亲近时偶尔使用",
+        #"当别人被戳或者揉或者捏或者拍时使用"
+        "当你想安慰对方时使用",
+        "注意：如果你已经戳过某人了，就不要再次戳了，不然会引起别人的反感！！！不要连续使用！！"
+    ]
 
     last_poke_user: Optional[str] = None
     last_poke_group: Optional[str] = None
@@ -163,7 +190,7 @@ class PokeAction(BaseAction):
 class PokePlugin(BasePlugin):
     plugin_name: str = "poke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.4.0"
+    plugin_version = "0.2.0"
     plugin_author = "何夕"
     enable_plugin: bool = True
     config_file_name: str = "config.toml"
