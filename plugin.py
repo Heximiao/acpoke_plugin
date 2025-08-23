@@ -26,11 +26,12 @@ NAPCAT_BASE_URL = f"http://{NAPCAT_HOST}:{NAPCAT_PORT}"
 
 
 class PokeAction(BaseAction):
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.api = kwargs.get('api', None)
         self.reasoning = kwargs.get('reasoning', None)
+        self.llm_response_text = kwargs.get('llm_response_text', "")
 
     """戳一戳Action - 可被主动调用或LLM判定自动触发"""
     action_name = "poke"
@@ -46,7 +47,6 @@ class PokeAction(BaseAction):
 
     associated_types = ["text"]
 
-    
     llm_judge_prompt = """
 你是一个会戳别人的小助手。戳一戳是一个相对友善的动作，在聊天时会时不时的触发
 当用户表示想让bot戳人，或者有人戳或者揉了bot，或者你想要戳别人时你可以调用。
@@ -64,9 +64,9 @@ class PokeAction(BaseAction):
 """
 
     action_parameters = {
-        "user_id": "要戳的用户ID，必填",
-        "group_id": "群ID（可选）",
-        "reply_id": "回复消息ID（可选）",
+        "user_id": "要戳的用户ID 也就是名称，必填",
+        "group_id": "群ID（不知道就填别填，留空）",
+        "reply_id": "回复消息ID",
         "poke_mode": "主动或被动，默认为被动",
     }
 
@@ -79,7 +79,6 @@ class PokeAction(BaseAction):
         "别人被戳或者揉时跟着使用",
         "当你觉得对方很可爱时使用",
         "当你想和对方亲近时使用",
-        #"当别人被戳或者揉或者捏或者拍时使用"
         "当你想安慰对方时使用",
         "注意：如果你已经戳过某人了，就不要再次戳了，不然会引起别人的反感！！！不要连续使用！！"
     ]
@@ -87,60 +86,137 @@ class PokeAction(BaseAction):
     last_poke_user: Optional[str] = None
     last_poke_group: Optional[str] = None
 
-    async def get_group_id(self) -> Optional[str]:
-        """获取当前上下文的群ID"""
+    async def _napcat_request(self, endpoint: str, payload: dict) -> Optional[dict]:
+        """封装Napcat API请求"""
+        url = f"{NAPCAT_BASE_URL}/{endpoint}"
+        headers = {"Content-Type": "application/json"}
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            if data.get("status") == "ok":
+                return data
+            logger.error(f"Napcat API返回失败: {data}")
+        except Exception as e:
+            logger.error(f"调用Napcat API失败 ({endpoint}): {e}")
+        return None
+
+    async def _get_group_id_from_napcat(self, group_name: str) -> Optional[str]:
+        """通过群名模糊查找群ID"""
+        data = await self._napcat_request("get_group_list", {})
+        if data and isinstance(data.get("data"), list):
+            for group in data["data"]:
+                if group_name in group.get("group_name", "") or group_name in group.get("group_remark", ""):
+                    logger.info(f"通过Napcat API找到群 '{group_name}' 的ID: {group['group_id']}")
+                    return str(group['group_id'])
+        return None
+
+    async def _get_friend_id_from_napcat(self, friend_name: str) -> Optional[str]:
+        """通过好友名模糊查找好友ID"""
+        data = await self._napcat_request("get_friend_list", {})
+        if data and isinstance(data.get("data"), list):
+            for friend in data["data"]:
+                if friend_name in friend.get("nickname", "") or friend_name in friend.get("remark", ""):
+                    logger.info(f"通过Napcat API找到好友 '{friend_name}' 的ID: {friend['user_id']}")
+                    return str(friend['user_id'])
+        return None
+
+    async def _get_group_member_id_from_napcat(self, group_id: str, member_name: str) -> Optional[str]:
+        """通过群成员名模糊查找成员ID"""
+        payload = {"group_id": int(group_id), "no_cache": False}
+        data = await self._napcat_request("get_group_member_list", payload)
+        if data and isinstance(data.get("data"), list):
+            for member in data["data"]:
+                if member_name in member.get("nickname", "") or member_name in member.get("card", ""):
+                    logger.info(f"在群 {group_id} 中找到成员 '{member_name}' 的ID: {member['user_id']}")
+                    return str(member['user_id'])
+        return None
+
+    async def get_user_and_group_id(self) -> Tuple[Optional[str], Optional[str]]:
+        """从多个来源获取 user_id 和 group_id"""
+        user_id_or_name = self.action_data.get("user_id")
         group_id = self.action_data.get("group_id")
 
-        # 1. 从 message.message_info.group_id 获取
+        # 1. 优先从上下文获取 group_id
         if not group_id and hasattr(self, "message") and getattr(self.message, "message_info", None):
             group_id = getattr(self.message.message_info, "group_id", None)
-
-        # 2. 从 chat_stream 获取
         if not group_id and hasattr(self, "chat_stream") and getattr(self.chat_stream, "group_id", None):
             group_id = self.chat_stream.group_id
-
-        # 3. 从自身属性获取
         if not group_id and hasattr(self, "group_id"):
-            group_id = getattr(self, "group_id", None)
+            group_id = self.group_id
+        
+        # 2. 如果 user_id_or_name 是纯数字，直接用它
+        if user_id_or_name and str(user_id_or_name).isdigit():
+            user_id = str(user_id_or_name)
+            return user_id, group_id
 
-        return group_id
+        # 3. 如果 user_id_or_name 是名称，则开始智能查找
+        if user_id_or_name:
+            # 尝试在当前群聊中查找成员
+            if group_id:
+                user_id = await self._get_group_member_id_from_napcat(str(group_id), user_id_or_name)
+                if user_id:
+                    return user_id, str(group_id)
 
-    async def execute(self) -> Tuple[bool, str]:
-        user_id_or_name = self.action_data.get("user_id")
-        reply_id = self.action_data.get("reply_id")
-        poke_mode = self.action_data.get("poke_mode", "被动")
+            # 尝试在好友列表中查找
+            user_id = await self._get_friend_id_from_napcat(user_id_or_name)
+            if user_id:
+                return user_id, None
 
-        # 🔑 新增：动态获取 group_id
-        group_id = await self.get_group_id()
-
-        if POKE_DEBUG:
-            logger.info(f"poke参数: user_id={user_id_or_name}, group_id={group_id}, reply_id={reply_id}, poke_mode={poke_mode}")
-
-        if not user_id_or_name:
-            await self.send_text("戳一戳需要user_id")
-            return False, "戳一戳需要user_id"
-
-        # 用户名 → QQ号的逻辑保持不动
-        if not str(user_id_or_name).isdigit():
+            # 最后的尝试：从 person_api 获取
             try:
                 person_id = person_api.get_person_id_by_name(user_id_or_name)
-                user_id = await person_api.get_person_value(person_id, "user_id")
+                if person_id:
+                    user_id = await person_api.get_person_value(person_id, "user_id")
+                    if user_id:
+                        return user_id, group_id
             except Exception as e:
-                logger.error(f"{self.log_prefix} 查找用户ID时出错: {e}")
-                await self.send_text("查找用户信息时出现问题~")
-                return False, "查找用户信息时出现问题"
+                logger.error(f"person_api 查找用户ID时出错: {e}")
+        
+        # 4. 如果没有找到用户ID，尝试通过 LLM 提供的 group_id 查找
+        if group_id and str(group_id).isdigit():
+            user_id = self.action_data.get("user_id")
+            if user_id and str(user_id).isdigit():
+                return str(user_id), str(group_id)
+        
+        # 5. 如果仍然没有找到，从LLM响应文本中提取
+        match_group = re.search(r'group_id:\s*(\d+)', self.llm_response_text)
+        match_user = re.search(r'user_id:\s*(\d+)', self.llm_response_text)
+        if match_group:
+            group_id = match_group.group(1)
+        if match_user:
+            user_id = match_user.group(1)
+            return user_id, group_id
 
-            if not user_id:
-                await self.send_text(f"找不到用户 {user_id_or_name} 的ID")
-                return False, "用户不存在"
-        else:
-            user_id = user_id_or_name
+        logger.warning(f"无法从任何可用来源获取到有效的 user_id 或 group_id。")
+        return None, None
 
-        # 执行戳一戳请求
+    async def execute(self) -> Tuple[bool, str]:
+        user_id, group_id = await self.get_user_and_group_id()
+        poke_mode = self.action_data.get("poke_mode", "被动")
+        reply_id = self.action_data.get("reply_id")
+
+        if POKE_DEBUG:
+            logger.info(f"poke参数: user_id={user_id}, group_id={group_id}, poke_mode={poke_mode}")
+
+        if not user_id:
+            await self.send_text("戳一戳失败，无法找到目标用户ID。")
+            return False, "无法找到目标用户ID"
+
+        # 检查是否重复戳了同一个人
+        if self.last_poke_user == user_id and self.last_poke_group == group_id and (time.time() - self._last_poke_time < 300):
+            logger.warning("避免重复戳同一个人")
+            return False, "避免重复戳同一个人"
+
         if group_id:
             ok, result = self._send_group_poke(group_id, reply_id, user_id)
+            self.last_poke_group = group_id
         else:
             ok, result = self._send_friend_poke(user_id)
+            self.last_poke_group = None
+            
+        self.last_poke_user = user_id
+        self._last_poke_time = time.time()
 
         if ok:
             return True, "戳一戳成功"
@@ -149,10 +225,9 @@ class PokeAction(BaseAction):
             return False, f"戳一戳失败: {result}"
 
     def _send_group_poke(self, group_id: Optional[str], reply_id: Optional[int], user_id: str):
-        # 如果 group_id 无效，使用默认群号
         if not group_id or not str(group_id).isdigit():
-            logger.warning(f"[poke_plugin] 无效的 group_id={group_id}，使用默认群号")        ####这里可以添加失效以后默认发戳一戳的群
-            group_id = "删掉这几个字，填你的群"
+            logger.warning(f"[poke_plugin] 无效的 group_id={group_id}，尝试使用默认群号。")
+            return False, "无效的群ID"
 
         url = f"{NAPCAT_BASE_URL}/group_poke"
         payload = {
@@ -192,7 +267,7 @@ class PokeAction(BaseAction):
 class PokePlugin(BasePlugin):
     plugin_name: str = "poke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.4.0"
+    plugin_version = "0.4.1"
     plugin_author = "何夕"
     enable_plugin: bool = True
     config_file_name: str = "config.toml"
@@ -208,7 +283,7 @@ class PokePlugin(BasePlugin):
         "plugin": {
             "name": ConfigField(str, default="poke_plugin", description="插件名称"),
             "enabled": ConfigField(bool, default=True, description="是否启用插件"),
-            "version": ConfigField(str, default="1.0.0", description="插件版本"),
+            "version": ConfigField(str, default="0.4.1", description="插件版本"),
             "description": ConfigField(str, default="QQ戳一戳插件", description="插件描述"),
         },
         "poke": {
