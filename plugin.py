@@ -12,6 +12,7 @@ from src.plugin_system.base.component_types import ComponentInfo, ActionActivati
 from src.plugin_system.base.config_types import ConfigField
 from src.plugin_system.apis import person_api
 from src.common.logger import get_logger
+from src.plugin_system.apis import database_api
 
 
 logger = get_logger("poke_plugin")
@@ -221,6 +222,16 @@ class PokeAction(BaseAction):
         self._last_poke_time = time.time()
 
         if ok:
+            reason = self.action_data.get("reason", self.reasoning or "无")
+            await database_api.store_action_info(
+                chat_stream=self.chat_stream,  # 从BaseAction继承来的
+                action_build_into_prompt=True,
+                action_prompt_display=f"使用了戳一戳，原因：{reason}",
+                action_done=True,
+                action_data={"reason": reason},  # 只存原因
+                action_name="poke"              # 存名字
+            )
+            logger.info(f"存储成功")
             return True, "戳一戳成功"
         else:
             if POKE_DEBUG:
@@ -270,7 +281,7 @@ class PokeAction(BaseAction):
 class PokePlugin(BasePlugin):
     plugin_name: str = "poke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.4.0"
+    plugin_version = "0.4.1"
     plugin_author = "何夕"
     enable_plugin: bool = True
     config_file_name: str = "config.toml"
@@ -286,7 +297,7 @@ class PokePlugin(BasePlugin):
         "plugin": {
             "name": ConfigField(str, default="poke_plugin", description="插件名称"),
             "enabled": ConfigField(bool, default=True, description="是否启用插件"),
-            "version": ConfigField(str, default="1.0.0", description="插件版本"),
+            "version": ConfigField(str, default="0.4.1", description="插件版本"),
             "description": ConfigField(str, default="QQ戳一戳插件", description="插件描述"),
         },
         "poke": {
