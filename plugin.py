@@ -200,7 +200,9 @@ class PokeAction(BaseAction):
             logger.info(f"poke参数: user_id={user_id}, group_id={group_id}, poke_mode={poke_mode}")
 
         if not user_id:
-            await self.send_text("戳一戳失败，无法找到目标用户ID。")
+            if POKE_DEBUG:
+                await self.send_text("戳一戳失败，无法找到目标用户ID。")
+                logger.warning(f"戳一戳失败，无法找到目标用户ID。")
             return False, "无法找到目标用户ID"
 
         # 检查是否重复戳了同一个人
@@ -221,7 +223,8 @@ class PokeAction(BaseAction):
         if ok:
             return True, "戳一戳成功"
         else:
-            await self.send_text(f"戳一戳失败: {result}")
+            if POKE_DEBUG:
+                await self.send_text(f"戳一戳失败: {result}")
             return False, f"戳一戳失败: {result}"
 
     def _send_group_poke(self, group_id: Optional[str], reply_id: Optional[int], user_id: str):
@@ -267,7 +270,7 @@ class PokeAction(BaseAction):
 class PokePlugin(BasePlugin):
     plugin_name: str = "poke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.4.1"
+    plugin_version = "0.4.0"
     plugin_author = "何夕"
     enable_plugin: bool = True
     config_file_name: str = "config.toml"
@@ -283,7 +286,7 @@ class PokePlugin(BasePlugin):
         "plugin": {
             "name": ConfigField(str, default="poke_plugin", description="插件名称"),
             "enabled": ConfigField(bool, default=True, description="是否启用插件"),
-            "version": ConfigField(str, default="0.4.1", description="插件版本"),
+            "version": ConfigField(str, default="1.0.0", description="插件版本"),
             "description": ConfigField(str, default="QQ戳一戳插件", description="插件描述"),
         },
         "poke": {
