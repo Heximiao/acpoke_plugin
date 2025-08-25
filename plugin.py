@@ -134,7 +134,7 @@ class PokeAction(BaseAction):
         return None
 
     async def get_user_and_group_id(self) -> Tuple[Optional[str], Optional[str]]:
-        """从多个来源获取 user_id 和 group_id"""
+        """从多个来源获取 user_id 和 group_id，优先使用 person_api"""
         user_id_or_name = self.action_data.get("user_id")
         group_id = self.action_data.get("group_id")
 
@@ -151,11 +151,22 @@ class PokeAction(BaseAction):
 
         # 2. 如果 user_id_or_name 是纯数字，直接用它
         if user_id_or_name and str(user_id_or_name).isdigit():
-            user_id = str(user_id_or_name)
-            return user_id, group_id
+            return str(user_id_or_name), group_id
 
         # 3. 如果 user_id_or_name 是名称，则开始智能查找
+        user_id = None
         if user_id_or_name:
+            # 优先尝试 person_api
+            try:
+                person_id = person_api.get_person_id_by_name(user_id_or_name)
+                if person_id:
+                    user_id = await person_api.get_person_value(person_id, "user_id")
+                    if user_id:
+                        logger.info(f"查找成功")
+                        return user_id, group_id
+            except Exception as e:
+                logger.error(f"person_api 查找用户ID时出错: {e}")
+
             # 尝试在当前群聊中查找成员
             if group_id:
                 user_id = await self._get_group_member_id_from_napcat(str(group_id), user_id_or_name)
@@ -167,21 +178,10 @@ class PokeAction(BaseAction):
             if user_id:
                 return user_id, None
 
-            # 最后的尝试：从 person_api 获取
-            try:
-                person_id = person_api.get_person_id_by_name(user_id_or_name)
-                if person_id:
-                    user_id = await person_api.get_person_value(person_id, "user_id")
-                    if user_id:
-                        return user_id, group_id
-            except Exception as e:
-                logger.error(f"person_api 查找用户ID时出错: {e}")
-        
         # 4. 如果没有找到用户ID，尝试通过 LLM 提供的 group_id 查找
         if group_id and str(group_id).isdigit():
-            user_id = self.action_data.get("user_id")
-            if user_id and str(user_id).isdigit():
-                return str(user_id), str(group_id)
+            if user_id_or_name and str(user_id_or_name).isdigit():
+                return str(user_id_or_name), str(group_id)
         
         # 5. 如果仍然没有找到，从LLM响应文本中提取
         match_group = re.search(r'group_id:\s*(\d+)', self.llm_response_text)
@@ -194,6 +194,7 @@ class PokeAction(BaseAction):
 
         logger.warning(f"无法从任何可用来源获取到有效的 user_id 或 group_id。")
         return None, None
+
 
     async def execute(self) -> Tuple[bool, str]:
         user_id, group_id = await self.get_user_and_group_id()
