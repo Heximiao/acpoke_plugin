@@ -146,6 +146,9 @@ class PokeAction(BaseAction):
         if not group_id and hasattr(self, "group_id"):
             group_id = self.group_id
         
+        if group_id == 'None':
+            group_id = None
+
         # 2. 如果 user_id_or_name 是纯数字，直接用它
         if user_id_or_name and str(user_id_or_name).isdigit():
             user_id = str(user_id_or_name)
@@ -281,7 +284,7 @@ class PokeAction(BaseAction):
 class PokePlugin(BasePlugin):
     plugin_name: str = "poke_plugin"
     plugin_description = "QQ戳一戳插件：支持主动、被动、戳回去功能"
-    plugin_version = "0.4.1"
+    plugin_version = "0.4.2"
     plugin_author = "何夕"
     enable_plugin: bool = True
     config_file_name: str = "config.toml"
@@ -297,7 +300,7 @@ class PokePlugin(BasePlugin):
         "plugin": {
             "name": ConfigField(str, default="poke_plugin", description="插件名称"),
             "enabled": ConfigField(bool, default=True, description="是否启用插件"),
-            "version": ConfigField(str, default="0.4.1", description="插件版本"),
+            "version": ConfigField(str, default="0.4.2", description="插件版本"),
             "description": ConfigField(str, default="QQ戳一戳插件", description="插件描述"),
         },
         "poke": {
