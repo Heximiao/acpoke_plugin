@@ -74,14 +74,12 @@ class PokeAction(BaseAction):
     action_require = [
         "当你想使用QQ戳一戳功能时",
         "当别人叫你戳他时偶尔使用",
-        "当你被揉或者戳之后可以使用",
         "友好聊天的氛围时使用",
         "提及某人时使用",
-        "别人被戳或者揉时跟着使用",
         "当你觉得对方很可爱时使用",
-        "当你想和对方亲近时使用",
-        "当你想安慰对方时使用",
-        "注意：如果你已经戳过某人了，就不要再次戳了，不然会引起别人的反感！！！不要连续使用！！"
+        "当你想和对方亲近时偶尔使用",
+        "当你想安慰对方时偶尔使用",
+        "注意：不要连续使用超过三次！！不要一直使用！！"
     ]
 
     last_poke_user: Optional[str] = None
@@ -195,7 +193,6 @@ class PokeAction(BaseAction):
         logger.warning(f"无法从任何可用来源获取到有效的 user_id 或 group_id。")
         return None, None
 
-
     async def execute(self) -> Tuple[bool, str]:
         user_id, group_id = await self.get_user_and_group_id()
         poke_mode = self.action_data.get("poke_mode", "被动")
@@ -279,7 +276,6 @@ class PokeAction(BaseAction):
         except Exception as e:
             logger.error(f"[戳一戳请求失败] {e}")
             return False, str(e)
-
 
 @register_plugin
 class PokePlugin(BasePlugin):
