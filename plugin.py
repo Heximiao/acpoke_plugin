@@ -1,12 +1,9 @@
 import re
-import json
-import random
 import requests
-import logging
 from typing import List, Tuple, Type, Optional
 import time
 
-from src.plugin_system import BasePlugin, register_plugin, BaseCommand
+from src.plugin_system import BasePlugin, register_plugin
 from src.plugin_system.base.base_action import BaseAction
 from src.plugin_system.base.component_types import ComponentInfo, ActionActivationType, ChatMode
 from src.plugin_system.base.config_types import ConfigField
@@ -37,7 +34,10 @@ class PokeAction(BaseAction):
     """戳一戳Action - 可被主动调用或LLM判定自动触发"""
     action_name = "poke"
     action_description = "调用QQ戳一戳功能"
-
+    # 适配MaiBot BaseAction接口所需的激活类型属性
+    # 参考文档要求：必须提供 `activation_type`
+    activation_type = ActionActivationType.KEYWORD
+    # 保留原有可选配置以兼容未来扩展（不会影响当前框架）
     focus_activation_type = ActionActivationType.LLM_JUDGE
     normal_activation_type = ActionActivationType.KEYWORD
     mode_enable = ChatMode.ALL
@@ -160,7 +160,7 @@ class PokeAction(BaseAction):
                 if person_id:
                     user_id = await person_api.get_person_value(person_id, "user_id")
                     if user_id:
-                        logger.info(f"查找成功")
+                        logger.info("查找成功")
                         return user_id, group_id
             except Exception as e:
                 logger.error(f"person_api 查找用户ID时出错: {e}")
@@ -190,7 +190,7 @@ class PokeAction(BaseAction):
             user_id = match_user.group(1)
             return user_id, group_id
 
-        logger.warning(f"无法从任何可用来源获取到有效的 user_id 或 group_id。")
+            logger.warning("无法从任何可用来源获取到有效的 user_id 或 group_id。")
         return None, None
 
     async def execute(self) -> Tuple[bool, str]:
@@ -204,7 +204,7 @@ class PokeAction(BaseAction):
         if not user_id:
             if POKE_DEBUG:
                 await self.send_text("戳一戳失败，无法找到目标用户ID。")
-                logger.warning(f"戳一戳失败，无法找到目标用户ID。")
+                logger.warning("戳一戳失败，无法找到目标用户ID。")
             return False, "无法找到目标用户ID"
 
         # 检查是否重复戳了同一个人
@@ -232,7 +232,7 @@ class PokeAction(BaseAction):
                 action_data={"reason": reason},  # 只存原因
                 action_name="poke"              # 存名字
             )
-            logger.info(f"存储成功")
+            logger.info("存储成功")
             return True, "戳一戳成功"
         else:
             if POKE_DEBUG:
