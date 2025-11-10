@@ -11,7 +11,7 @@ name = "acpoke_plugin"
 enabled = true
 
 # 插件版本
-version = "0.3.4"
+version = "0.4.3"
 
 # 插件描述
 description = "QQ戳一戳插件"
