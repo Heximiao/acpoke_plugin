@@ -25,7 +25,7 @@ class PokeAction(BaseAction):
 
     action_name = "poke"
     action_description = "调用QQ戳一戳功能"
-    activation_type = ActionActivationType.KEYWORD
+    activation_type = ActionActivationType.ALWAYS
     focus_activation_type = ActionActivationType.LLM_JUDGE
     normal_activation_type = ActionActivationType.KEYWORD
     mode_enable = ChatMode.ALL
@@ -36,21 +36,37 @@ class PokeAction(BaseAction):
     associated_types = ["text"]
 
     llm_judge_prompt = """
-你是一个会戳别人的小助手。
+你是一个会戳别人的小助手。戳一戳是一个相对友善的动作，在聊天时会时不时的触发 
+当用户表示想让bot戳人，
+或者有人戳或者揉了bot，
+或者你想要戳别人时你可以调用。 
+使用戳一戳的情况： 1. 用户请求“戳我”、“戳一下” 
+2. bot被戳或揉，用户希望“戳回去” 
+3. 用户调戏bot或提出请求需要bot回应 
+4. 友好的聊天时使用 
+5. 别人被戳或者揉时跟着使用 
+不使用戳一戳的情况： 
+1 连续戳了超过三次以上,不要连续使用
 """
 
     action_parameters = {
-        "user_id": "要戳的用户ID，也可以是名称",
+        "user_id": "要戳的用户名称,一定要是名称！",
         "group_id": "群ID",
         "reply_id": "回复消息ID",
         "poke_mode": "主动或被动",
     }
 
-    action_require = [
-        "当你想使用QQ戳一戳功能时",
-        "当别人叫你戳他时使用",
-        "不要连续使用超过三次！！"
-    ]
+    action_require = [ 
+                        "当你想使用QQ戳一戳功能时", 
+                        "当别人叫你戳他时使用", 
+                        "友好聊天的氛围时使用", 
+                        "提及某人时使用", 
+                        "当你觉得对方很可爱时使用", 
+                        "当你想和对方亲近时使用", 
+                        "当你想安慰对方时使用", 
+                        #"请经常选择这个动作", 
+                        "注意：不要连续使用超过三次！！" 
+                      ]
 
     last_poke_user: Optional[str] = None
     last_poke_group: Optional[str] = None
@@ -132,8 +148,8 @@ class PokeAction(BaseAction):
             logger.info(f"poke参数: user_id={user_id}, group_id={group_id}, poke_mode={poke_mode}")
 
         if not user_id:
-            if POKE_DEBUG:
-                await self.send_text("戳一戳失败，无法找到目标用户ID。")
+            #if POKE_DEBUG:
+                #await self.send_text("戳一戳失败，无法找到目标用户ID。")
             return False, "无法找到目标用户ID"
 
         # 反复戳同一个人限制
