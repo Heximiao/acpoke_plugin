@@ -26,7 +26,7 @@ class PokeAction(BaseAction):
     action_name = "poke"
     action_description = "调用QQ戳一戳功能"
     activation_type = ActionActivationType.ALWAYS
-    focus_activation_type = ActionActivationType.LLM_JUDGE
+    #focus_activation_type = ActionActivationType.LLM_JUDGE
     normal_activation_type = ActionActivationType.KEYWORD
     mode_enable = ChatMode.ALL
     parallel_action = False
