@@ -123,7 +123,8 @@ class PokeAction(BaseAction):
 
     async def _send_group_poke(self, group_id: Optional[str], reply_id: Optional[int], user_id: str):
         try:
-            await self.send_command("SEND_POKE", {"qq_id": user_id})
+            target_user_name = self.action_data.get("user_id", user_id)
+            await self.send_command("SEND_POKE", {"qq_id": user_id}, display_message=f"[戳了戳 {target_user_name}]")
             return True, {"status": "ok", "msg": "SEND_POKE 已发送"}
         except Exception as e:
             logger.error(f"[群戳失败] {e}")
@@ -131,7 +132,8 @@ class PokeAction(BaseAction):
 
     async def _send_friend_poke(self, user_id: str):
         try:
-            await self.send_command("SEND_POKE", {"qq_id": user_id})
+            target_user_name = self.action_data.get("user_id", user_id)
+            await self.send_command("SEND_POKE", {"qq_id": user_id}, display_message=f"[戳了戳 {target_user_name}]")
             return True, {"status": "ok", "msg": "SEND_POKE 已发送"}
         except Exception as e:
             logger.error(f"[好友戳失败] {e}")
