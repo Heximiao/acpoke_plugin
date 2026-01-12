@@ -17,17 +17,16 @@
   "homepage_url": "https://github.com/Heximiao/acpoke_plugin",
   "repository_url": "https://github.com/Heximiao/acpoke_plugin",
   "keywords": ["poke", "maimai", "互动", "自动戳人", "插件"],
-  "categories": ["Fun", "Interaction", "Automation"],
+  "categories": ["Entertainment & Interaction"],
   "default_locale": "zh-CN",
-  "locales_path": "_locales",
   "plugin_info": {
     "is_built_in": false,
     "plugin_type": "chat",
     "components": [
       {
         "type": "action",
-        "name": "ActivePokeAction",
-        "description": "主动模式下，插件可以自动戳一戳群成员，增强群聊互动体验"
+        "name": "PokeAction",
+        "description": "在合适场景下对目标用户执行戳一戳互动"
       }
     ],
     "features": ["戳一戳", "自动互动"]

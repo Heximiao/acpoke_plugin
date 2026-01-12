@@ -11,7 +11,7 @@ name = "acpoke_plugin"
 enabled = true
 
 # 插件版本
-version = "0.4.3"
+version = "0.5.1"
 
 # 插件描述
 description = "QQ戳一戳插件"
@@ -20,10 +20,11 @@ description = "QQ戳一戳插件"
 # 戳一戳功能配置
 [poke]
 
-# Napcat Host
-napcat_host = "127.0.0.1"
+# Adapter命令名（一般无需修改）
+command_name = "SEND_POKE"
 
-# Napcat Port
-napcat_port = "4999"
+# 同一目标冷却时间（秒）
+cooldown_seconds = 30
 
-
+# 是否开启调试日志
+debug = false
